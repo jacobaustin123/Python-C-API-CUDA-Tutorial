@@ -4,4 +4,4 @@ The Python C-API lets you write functions in C and call them like normal Python 
 
 # Usage:
 
-This repository contains everything you need to compile a C extension for Python with CUDA and Numpy support. Just clone the repository and run make python to build and install the Python module. 
+Run `make` to compile the module and run tests. It should complain if it's unable to find the correct dependencies.
