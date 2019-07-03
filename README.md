@@ -4,7 +4,26 @@ The Python C-API lets you write functions in C and call them like normal Python 
 
 # Usage:
 
-Run `make` to compile the module and run tests. It should complain if it's unable to find the correct dependencies.
+```bash
+git clone https://github.com/ja3067/Python-C-API-CUDA-Tutorial.git
+cd Python-C-API-CUDA-Tutorial
+make
+```
+
+Run `make` to compile the module and run tests. It should complain if it's unable to find the correct dependencies. To use some of the example functions, run
+
+```python
+>>> import myModule
+>>> myModule.helloworld()
+Hello World
+>>> import numpy as np
+>>> myModule.trace(np.random.randn(4, 4))
+0.9221652081491398
+>>> myModule.vector_add(np.random.randn(500), np.random.randn(500))
+[0.01, ..., 0.54]
+>>> myModule.vector_add_cpu(np.random.randn(500), np.random.randn(500))
+[0.07, ..., 0.24]
+```
 
 # More Information
 
