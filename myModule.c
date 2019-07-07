@@ -51,92 +51,78 @@ static PyObject* fib(PyObject* self, PyObject* args) {
 }
 
 static PyObject* vector_add(PyObject* self, PyObject* args) {
-    PyArrayObject* array1, * array2;
-    double * output;
+    PyArrayObject *array1, *array2;
 
     if (!PyArg_ParseTuple(args, "O!O!", &PyArray_Type, &array1, &PyArray_Type, &array2))
         return NULL;
 
-    if (array1 -> nd != 1 || array2 -> nd != 1 || array1->descr->type_num != PyArray_DOUBLE || array2->descr->type_num != PyArray_DOUBLE) {
-        PyErr_SetString(PyExc_ValueError, "arrays must be one-dimensional and of type float");
+    PyArrayObject* array3 = (PyArrayObject*)PyArray_NewLikeArray(array1, NPY_ANYORDER, NULL, 1);
+
+    PyObject * mobj = PyArray_MultiIterNew(3, array1, array2, array3);
+    if (!mobj) {
         return NULL;
     }
 
-    int n1 = array1->dimensions[0];
-    int n2 = array2->dimensions[0];
+    double *data1, *data2, *data3;
 
-    printf("running vector_add on dim1: %d, stride1: %d, dim2: %d, stride2: %d\n", n1, array1->strides[0], n2, array2->strides[0]);
+    while (PyArray_MultiIter_NOTDONE(mobj)) {
+        data1 = (double *) PyArray_MultiIter_DATA(mobj, 0);
+        data2 = (double*) PyArray_MultiIter_DATA(mobj, 1);
+        data3 = (double*) PyArray_MultiIter_DATA(mobj, 2);
 
-    if (n1 != n2) {
-        PyErr_SetString(PyExc_ValueError, "arrays must have the same length");
-        return NULL;
+        *data3 = *data1 + *data2;
+
+        PyArray_MultiIter_NEXT(mobj);
     }
 
-    output = myVectorAdd((double *) array1 -> data, (double *) array2 -> data, n1);
+    // array1 = (PyArrayObject*) PyArray_ContiguousFromObject(array1, PyArray_DOUBLE, 1, 3); // range of allowed dimensions
+    // array2 = (PyArrayObject*) PyArray_ContiguousFromObject(array2, PyArray_DOUBLE, 1, 3);
 
-    return PyArray_SimpleNewFromData(1, PyArray_DIMS(array1), PyArray_TYPE(array1), output);
-}
+    // if (array1 == NULL || array2 == NULL) {
+    //     PyErr_SetString(PyExc_RuntimeError, "arrays cannot be converted to double type or have invalid size."); 
+    //     return NULL;
+    // }
 
-static PyObject* vector_add_cpu(PyObject* self, PyObject* args) {
-    PyArrayObject* array1, * array2;
+    // if (PyArray_NDIM(array1) != PyArray_NDIM(array2)) {
+    //     PyErr_SetString(PyExc_RuntimeError, "arrays must have the same number of dimensions.");
+    //     return NULL;
+    // }
 
-    if (!PyArg_ParseTuple(args, "O!O!", &PyArray_Type, &array1, &PyArray_Type, &array2))
-        return NULL;
+    // for (int i = 0; i < array1 -> nd; i++) {
+    //     if (PyArray_DIMS(array1)[i] != PyArray_DIMS(array2)[i]) {
+    //         PyErr_SetString(PyExc_RuntimeError, "arrays must have the same shape.");
+    //         return NULL;
+    //     }
+    // }
 
-    if (array1 -> nd != 1 || array2 -> nd != 1 || array1->descr->type_num != PyArray_DOUBLE || array2->descr->type_num != PyArray_DOUBLE) {
-        PyErr_SetString(PyExc_ValueError, "arrays must be one-dimensional and of type float");
-        return NULL;
-    }
+    // PyArrayObject* output = (PyArrayObject*) PyArray_NewLikeArray(array1, NPY_ANYORDER, NULL, 1);
 
-    int n1 = array1->dimensions[0];
-    int n2 = array2->dimensions[0];
+    // PyArrayIterObject* iter1, * iter2, * iter3;
+    // iter1 = (PyArrayIterObject*) PyArray_IterNew(array1);
+    // iter2 = (PyArrayIterObject*) PyArray_IterNew(array2);
+    // iter3 = (PyArrayIterObject*) PyArray_IterNew(output);
 
-    printf("running vector_add on dim1: %d, stride1: %d, dim2: %d, stride2: %d\n", n1, array1->strides[0], n2, array2->strides[0]);
+    // if (iter1 == NULL || iter2 == NULL || iter3 == NULL) {
+    //     PyErr_SetString(PyExc_RuntimeError, "unable to create iterator.");
+    //     return NULL;
+    // }
 
-    if (n1 != n2) {
-        PyErr_SetString(PyExc_ValueError, "arrays must have the same length");
-        return NULL;
-    }
+    // while (iter1->index < iter1->size) {
+    //     *(double*)(iter3 -> dataptr) = * (double*) (iter1 -> dataptr) + * (double*) (iter2->dataptr);
 
-    double * output = (double *) malloc(sizeof(double) * n1);
+    //     PyArray_ITER_NEXT(iter1);
+    //     PyArray_ITER_NEXT(iter2);
+    //     PyArray_ITER_NEXT(iter3);
+    // }
 
-    for (int i = 0; i < n1; i++)
-        output[i] = *((double *) array1 -> data + i) + *((double *) array2 -> data + i);
+    Py_DECREF(array1);
+    Py_DECREF(array2);
 
-    return PyArray_SimpleNewFromData(1, PyArray_DIMS(array1), PyArray_TYPE(array1), output);
-}
-
-static PyObject* trace(PyObject* self, PyObject* args) {
-    PyArrayObject* array;
-    double sum;
-    int i, n;
-
-    if (!PyArg_ParseTuple(args, "O!", &PyArray_Type, &array))
-        return NULL;
-
-    if (array -> nd != 2 || array->descr->type_num != PyArray_DOUBLE) {
-        PyErr_SetString(PyExc_ValueError, "array must be two-dimensional and of type float");
-        return NULL;
-    }
-
-    n = array->dimensions[0];
-    if (n > array->dimensions[1])
-        n = array->dimensions[1];
-    
-    sum = 0.0;
-
-    for (i = 0; i < n; i++)
-        sum += *(double*)(array->data + i * array->strides[0] + i * array->strides[1]);
-
-    return PyFloat_FromDouble(sum);
+    return (PyObject *) array3;
 }
 
 static PyMethodDef myMethods[] = {
-    {"helloworld", helloworld, METH_NOARGS, "Prints Hello World"},
-    {"fib", fib, METH_VARARGS, "Computes the nth Fibonacci number"},
-    {"trace", trace, METH_VARARGS, "Computes the trace of a 2-dimensional numpy float array"},
-    {"vector_add_cpu", vector_add_cpu, METH_VARARGS, "add two vectors on the CPU"},
-    {"vector_add", vector_add, METH_VARARGS, "add two vectors with CUDA"},
+    {"vector_add", vector_add, METH_VARARGS, "add two 1D numpy arrays together"},
     {NULL, NULL, 0, NULL}
 };
 
