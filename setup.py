@@ -12,8 +12,12 @@ else:
    CUDA_PATH = "/usr/local/cuda"
 
 if not os.path.isdir(CUDA_PATH):
-   print("CUDA_PATH {} not found. Please update the CUDA_PATh variable and rerun".format(CUDA_PATH))
+   print("CUDA_PATH {} not found. Please update the CUDA_PATH variable and rerun".format(CUDA_PATH))
    exit(0)
+
+if not os.path.isdir(os.path.join(CUDA_PATH, "include")):
+    print("include directory not found in CUDA_PATH. Please update CUDA_PATH and try again")
+    exit(0)
 
 setup(name = 'myModule', version = '1.0',  \
    ext_modules = [
